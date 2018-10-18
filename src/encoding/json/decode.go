@@ -10,13 +10,14 @@ package json
 import (
 	"bytes"
 	"encoding"
-	"encoding/base64"
 	"fmt"
 	"reflect"
 	"strconv"
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
+
+	"github.com/mr-tron/base58/base58"
 )
 
 // Unmarshal parses the JSON-encoded data and stores the result
@@ -936,13 +937,12 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 				d.saveError(&UnmarshalTypeError{Value: "string", Type: v.Type(), Offset: int64(d.readIndex())})
 				break
 			}
-			b := make([]byte, base64.StdEncoding.DecodedLen(len(s)))
-			n, err := base64.StdEncoding.Decode(b, s)
+			b, err := base58.Decode(string(s))
 			if err != nil {
 				d.saveError(err)
 				break
 			}
-			v.SetBytes(b[:n])
+			v.SetBytes(b)
 		case reflect.String:
 			v.SetString(string(s))
 		case reflect.Interface:

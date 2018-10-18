@@ -13,7 +13,6 @@ package json
 import (
 	"bytes"
 	"encoding"
-	"encoding/base64"
 	"fmt"
 	"math"
 	"reflect"
@@ -23,6 +22,8 @@ import (
 	"sync"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/mr-tron/base58/base58"
 )
 
 // Marshal returns the JSON encoding of v.
@@ -724,26 +725,7 @@ func encodeByteSlice(e *encodeState, v reflect.Value, _ encOpts) {
 	}
 	s := v.Bytes()
 	e.WriteByte('"')
-	encodedLen := base64.StdEncoding.EncodedLen(len(s))
-	if encodedLen <= len(e.scratch) {
-		// If the encoded bytes fit in e.scratch, avoid an extra
-		// allocation and use the cheaper Encoding.Encode.
-		dst := e.scratch[:encodedLen]
-		base64.StdEncoding.Encode(dst, s)
-		e.Write(dst)
-	} else if encodedLen <= 1024 {
-		// The encoded bytes are short enough to allocate for, and
-		// Encoding.Encode is still cheaper.
-		dst := make([]byte, encodedLen)
-		base64.StdEncoding.Encode(dst, s)
-		e.Write(dst)
-	} else {
-		// The encoded bytes are too long to cheaply allocate, and
-		// Encoding.Encode is no longer noticeably cheaper.
-		enc := base64.NewEncoder(base64.StdEncoding, e)
-		enc.Write(s)
-		enc.Close()
-	}
+	e.WriteString(base58.Encode(s))
 	e.WriteByte('"')
 }
 
