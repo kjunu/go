@@ -1,0 +1,6 @@
+package: .
+import:
+- package: github.com/mr-tron/base58
+  version: ^1.0.0
+  subpackages:
+  - base58
